@@ -17,13 +17,32 @@
             {% endfor %}
         {% endif %}
         {% endwith %}
-        <form method="POST">
+        
+        <!-- Add Client Form -->
+        <form method="POST" class="mb-4">
             <div class="form-group">
                 <label for="client_ip">Client IP Address:</label>
                 <input type="text" class="form-control" id="client_ip" name="client_ip" required>
             </div>
-            <button type="submit" class="btn btn-primary">Add Client</button>
+            <button type="submit" name="add_client" class="btn btn-primary">Add Client</button>
         </form>
+        
+        <!-- List of Current Clients -->
+        {% if nfs_clients %}
+        <h2>Current NFS Clients</h2>
+        <ul class="list-group">
+            {% for client in nfs_clients %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ client }}
+                <form method="POST" class="d-inline">
+                    <button type="submit" name="remove_client" value="{{ client }}" class="btn btn-danger btn-sm">Remove</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>No NFS clients currently configured.</p>
+        {% endif %}
     </div>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
