@@ -84,7 +84,14 @@ def index():
                         client_ip = parts[1].split('(')[0]
                         nfs_clients.append(client_ip)
 
-    return render_template('index.html', nfs_clients=nfs_clients)
+    # File Explorer
+    path = request.args.get('path', EXPORT_DIR)
+    file_list = []
+    for item in os.listdir(path):
+        item_path = os.path.join(path, item)
+        is_dir = os.path.isdir(item_path)
+        file_list.append({'name': item, 'path': item_path, 'is_dir': is_dir})
 
+    return render_template('index.html', nfs_clients=nfs_clients, file_list=file_list)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

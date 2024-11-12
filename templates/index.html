@@ -1,49 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NFS Client Manager</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body>
     <div class="container mt-5">
-        <h1>NFS Client Manager</h1>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-        {% endwith %}
-        
-        <!-- Add Client Form -->
-        <form method="POST" class="mb-4">
-            <div class="form-group">
-                <label for="client_ip">Client IP Address:</label>
-                <input type="text" class="form-control" id="client_ip" name="client_ip" required>
-            </div>
-            <button type="submit" name="add_client" class="btn btn-primary">Add Client</button>
-        </form>
-        
-        <!-- List of Current Clients -->
-        {% if nfs_clients %}
-        <h2>Current NFS Clients</h2>
-        <ul class="list-group">
-            {% for client in nfs_clients %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ client }}
-                <form method="POST" class="d-inline">
-                    <button type="submit" name="remove_client" value="{{ client }}" class="btn btn-danger btn-sm">Remove</button>
-                </form>
-            </li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <p>No NFS clients currently configured.</p>
-        {% endif %}
+      <h1>NFS Client Manager</h1>
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %} {% endif %} {% endwith %}
+
+      <!-- Add Client Form -->
+      <form method="POST" class="mb-4">
+        <div class="form-group">
+          <label for="client_ip">Client IP Address:</label>
+          <input
+            type="text"
+            class="form-control"
+            id="client_ip"
+            name="client_ip"
+            required
+          />
+        </div>
+        <button type="submit" name="add_client" class="btn btn-primary">
+          Add Client
+        </button>
+      </form>
+
+      <!-- List of Current Clients -->
+      {% if nfs_clients %}
+      <h2>Current NFS Clients</h2>
+      <ul class="list-group">
+        {% for client in nfs_clients %}
+        <li
+          class="list-group-item d-flex justify-content-between align-items-center"
+        >
+          {{ client }}
+          <form method="POST" class="d-inline">
+            <button
+              type="submit"
+              name="remove_client"
+              value="{{ client }}"
+              class="btn btn-danger btn-sm"
+            >
+              Remove
+            </button>
+          </form>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p>No NFS clients currently configured.</p>
+      {% endif %}
     </div>
+
+    <!-- File Explorer -->
+    <h2>File Explorer</h2>
+    <ul class="list-group">
+      {% for item in file_list %}
+      <li class="list-group-item">
+        {% if item.is_dir %}
+        <a href="{{ url_for('index', path=item.path) }}">{{ item.name }}/</a>
+        {% else %} {{ item.name }} {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-</body>
+  </body>
 </html>
