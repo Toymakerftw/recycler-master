@@ -3,8 +3,9 @@ import os
 import subprocess
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'
+app.secret_key = 'your_secret_key'  # Replace with a secure key
 
+# Define variables
 EXPORT_DIR = "/mnt/recyclebin"
 PERMISSIONS = "rw,sync,no_subtree_check"
 
@@ -53,7 +54,40 @@ def remove_nfs_client(client_ip):
     except Exception as e:
         print(f"Error: {e}")
         return False
-    
+
+# Route to list NFS clients and handle adding/removing clients
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        if 'add_client' in request.form:
+            client_ip = request.form['client_ip']
+            if add_nfs_client(client_ip):
+                flash(f"NFS Client {client_ip} added successfully!", 'success')
+            else:
+                flash(f"Failed to add NFS Client {client_ip}.", 'danger')
+        elif 'remove_client' in request.form:
+            client_ip = request.form['remove_client']
+            if remove_nfs_client(client_ip):
+                flash(f"NFS Client {client_ip} removed successfully!", 'success')
+            else:
+                flash(f"Failed to remove NFS Client {client_ip}.", 'danger')
+        return redirect(url_for('index'))
+
+    # Read current NFS clients from /etc/exports
+    nfs_clients = []
+    if os.path.exists('/etc/exports'):
+        with open('/etc/exports', 'r') as exports_file:
+            for line in exports_file:
+                if EXPORT_DIR in line:
+                    parts = line.strip().split()
+                    if len(parts) > 1:
+                        # Extract client IP address by removing the permissions part
+                        client_ip = parts[1].split('(')[0]
+                        nfs_clients.append(client_ip)
+
+    return render_template('index.html', nfs_clients=nfs_clients)
+
+# Route to fetch files for a specific client directory
 @app.route('/client_files')
 def client_files():
     client = request.args.get('client')
@@ -64,10 +98,15 @@ def client_files():
     if os.path.exists(client_dir):
         for item in os.listdir(client_dir):
             item_path = os.path.join(client_dir, item)
-            file_list.append({'name': item, 'path': item_path, 'is_dir': os.path.isdir(item_path)})
+            file_list.append({
+                'name': item,
+                'path': item_path,
+                'is_dir': os.path.isdir(item_path)
+            })
 
     return jsonify(files=file_list)
 
+# Route to view a specific file's contents or download
 @app.route('/view_file')
 def view_file():
     file_path = request.args.get('file_path')
