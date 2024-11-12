@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NFS Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@tailwindcss/forms@0.3.3/dist/forms.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+
+  <div class="min-h-screen p-6">
+    <div class="max-w-7xl mx-auto">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">NFS Master Node Dashboard</h1>
+        <div class="flex items-center space-x-4">
+          <svg class="h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2zm0 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12z" clip-rule="evenodd"></path></svg>
+          <span class="text-sm text-gray-600" id="last-updated">{{ last_updated }}</span>
+        </div>
+      </div>
+
+      <!-- Alerts Section -->
+      <div class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
+        <svg class="h-4 w-4 text-red-500 inline-block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2zm0 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12z" clip-rule="evenodd"></path></svg>
+        <strong class="text-red-500">Critical Alert:</strong> High disk utilization detected ({{ disk_usage }}% used)
+      </div>
+
+      <!-- Key Metrics Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg">
+          <div class="flex items-center">
+            <svg class="h-8 w-8 text-blue-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2zm0 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12z" clip-rule="evenodd"></path></svg>
+            <div>
+              <p class="text-sm text-gray-500">CPU Usage</p>
+              <p class="text-2xl font-bold" id="cpu-usage">{{ cpu_usage }}%</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg">
+          <div class="flex items-center">
+            <svg class="h-8 w-8 text-blue-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2zm0 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12z" clip-rule="evenodd"></path></svg>
+            <div>
+              <p class="text-sm text-gray-500">Memory Usage</p>
+              <p class="text-2xl font-bold" id="memory-usage">{{ memory_usage }}%</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg">
+          <div class="flex items-center">
+            <svg class="h-8 w-8 text-blue-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2zm0 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12z" clip-rule="evenodd"></path></svg>
+            <div>
+              <p class="text-sm text-gray-500">Disk Usage</p>
+              <p class="text-2xl font-bold" id="disk-usage">{{ disk_usage }}%</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg">
+          <div class="flex items-center">
+            <svg class="h-8 w-8 text-blue-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2zm0 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12z" clip-rule="evenodd"></path></svg>
+            <div>
+              <p class="text-sm text-gray-500">Connected Agents</p>
+              <p class="text-2xl font-bold" id="disk-usage">{{ agent_count }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white p-6 rounded-lg shadow">
+          <h2 class="text-xl font-semibold mb-4">CPU Utilization</h2>
+          <canvas id="cpuChart" class="h-64"></canvas>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow">
+          <h2 class="text-xl font-semibold mb-4">Memory Usage</h2>
+          <canvas id="memoryChart" class="h-64"></canvas>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow">
+          <h2 class="text-xl font-semibold mb-4">Disk Usage</h2>
+          <canvas id="diskChart" class="h-64"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Fetch metrics data from the server
+    fetch('/metrics')
+      .then(response => response.json())
+      .then(data => {
+        const timestamps = data.timestamps;
+        const cpuUsages = data.cpu_usages;
+        const memoryUsages = data.memory_usages;
+        const diskUsages = data.disk_usages;
+        const agents = data.agent_count;
+
+
+        // Initialize CPU Chart
+        new Chart(document.getElementById('cpuChart'), {
+          type: 'line',
+          data: {
+            labels: timestamps,
+            datasets: [{
+              label: 'CPU Utilization',
+              data: cpuUsages,
+              borderColor: '#3b82f6',
+              fill: false
+            }]
+          }
+        });
+
+        // Initialize Memory Chart
+        new Chart(document.getElementById('memoryChart'), {
+          type: 'line',
+          data: {
+            labels: timestamps,
+            datasets: [{
+              label: 'Memory Usage',
+              data: memoryUsages,
+              borderColor: '#10b981',
+              fill: false
+            }]
+          }
+        });
+
+        // Initialize Disk Chart
+        new Chart(document.getElementById('diskChart'), {
+          type: 'line',
+          data: {
+            labels: timestamps,
+            datasets: [{
+              label: 'Disk Usage',
+              data: diskUsages,
+              borderColor: '#f43f5e',
+              fill: false
+            }]
+          }
+        });
+      })
+      .catch(error => console.error('Error fetching metrics:', error));
+  </script>
+
+</body>
+</html>
