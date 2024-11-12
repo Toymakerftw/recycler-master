@@ -1,82 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFS Client Manager</title>
-    <link
-      rel="stylesheet"
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
-    />
-  </head>
-  <body>
-    <div class="container mt-5">
-      <h1>NFS Client Manager</h1>
-      {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %} {% for category, message in messages %}
-      <div class="alert alert-{{ category }}">{{ message }}</div>
-      {% endfor %} {% endif %} {% endwith %}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h1 class="text-2xl font-bold mb-4">NFS Client Manager</h1>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="bg-{{ category }}-100 border border-{{ category }}-400 text-{{ category }}-700 px-4 py-3 rounded relative mb-4">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
 
-      <!-- Add Client Form -->
-      <form method="POST" class="mb-4">
-        <div class="form-group">
-          <label for="client_ip">Client IP Address:</label>
-          <input
-            type="text"
-            class="form-control"
-            id="client_ip"
-            name="client_ip"
-            required
-          />
+            <form method="POST" class="mb-6">
+                <div class="flex gap-4">
+                    <input type="text" name="client_ip" placeholder="Client IP Address" 
+                           class="flex-1 border rounded px-3 py-2">
+                    <button type="submit" name="add_client" 
+                            class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        Add Client
+                    </button>
+                </div>
+            </form>
+
+            {% if nfs_clients %}
+                <div class="mb-6">
+                    <h2 class="text-xl font-bold mb-3">Current NFS Clients</h2>
+                    <div class="space-y-2">
+                        {% for client in nfs_clients %}
+                            <div class="flex items-center justify-between bg-gray-50 p-3 rounded">
+                                <span>{{ client }}</span>
+                                <form method="POST" class="inline">
+                                    <button type="submit" name="remove_client" value="{{ client }}"
+                                            class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
+                                        Remove
+                                    </button>
+                                </form>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <p class="text-gray-500 mb-6">No NFS clients currently configured.</p>
+            {% endif %}
         </div>
-        <button type="submit" name="add_client" class="btn btn-primary">
-          Add Client
-        </button>
-      </form>
 
-      <!-- List of Current Clients -->
-      {% if nfs_clients %}
-      <h2>Current NFS Clients</h2>
-      <ul class="list-group">
-        {% for client in nfs_clients %}
-        <li
-          class="list-group-item d-flex justify-content-between align-items-center"
-        >
-          {{ client }}
-          <form method="POST" class="d-inline">
-            <button
-              type="submit"
-              name="remove_client"
-              value="{{ client }}"
-              class="btn btn-danger btn-sm"
-            >
-              Remove
-            </button>
-          </form>
-        </li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p>No NFS clients currently configured.</p>
-      {% endif %}
+        <div id="file-explorer"></div>
     </div>
 
-    <!-- File Explorer -->
-    <h2>File Explorer</h2>
-    <ul class="list-group">
-      {% for item in file_list %}
-      <li class="list-group-item">
-        {% if item.is_dir %}
-        <a href="{{ url_for('index', path=item.path) }}">{{ item.name }}/</a>
-        {% else %} {{ item.name }} {% endif %}
-      </li>
-      {% endfor %}
-    </ul>
-
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-  </body>
+    <script>
+        // Initialize the React component
+        const container = document.getElementById('file-explorer');
+        ReactDOM.render(React.createElement(FileExplorer), container);
+    </script>
+</body>
 </html>

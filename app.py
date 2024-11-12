@@ -1,13 +1,40 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 import os
 import subprocess
+import json
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with a secure key
 
-# Define variables
 EXPORT_DIR = "/mnt/recyclebin"
 PERMISSIONS = "rw,sync,no_subtree_check"
+
+def get_directory_structure(path):
+    """
+    Creates a nested dictionary that represents the folder structure of path
+    """
+    structure = []
+    try:
+        items = os.listdir(path)
+        for item in items:
+            item_path = os.path.join(path, item)
+            node = {
+                'name': item,
+                'path': item_path,
+                'isDir': os.path.isdir(item_path)
+            }
+            if node['isDir']:
+                node['children'] = get_directory_structure(item_path)
+            structure.append(node)
+    except Exception as e:
+        print(f"Error reading directory {path}: {e}")
+    return structure
+
+@app.route('/api/files')
+def get_files():
+    """API endpoint to get the file structure"""
+    structure = get_directory_structure(EXPORT_DIR)
+    return jsonify(structure)
 
 # Function to add client to NFS exports
 def add_nfs_client(client_ip):
@@ -80,18 +107,10 @@ def index():
                 if EXPORT_DIR in line:
                     parts = line.strip().split()
                     if len(parts) > 1:
-                        # Extract client IP address by removing the permissions part
                         client_ip = parts[1].split('(')[0]
                         nfs_clients.append(client_ip)
 
-    # File Explorer
-    path = request.args.get('path', EXPORT_DIR)
-    file_list = []
-    for item in os.listdir(path):
-        item_path = os.path.join(path, item)
-        is_dir = os.path.isdir(item_path)
-        file_list.append({'name': item, 'path': item_path, 'is_dir': is_dir})
+    return render_template('index.html', nfs_clients=nfs_clients)
 
-    return render_template('index.html', nfs_clients=nfs_clients, file_list=file_list)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
