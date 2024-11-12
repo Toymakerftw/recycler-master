@@ -1,11 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
 import os
 import subprocess
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-# Define variables
 EXPORT_DIR = "/mnt/recyclebin"
 PERMISSIONS = "rw,sync,no_subtree_check"
 
@@ -55,60 +54,20 @@ def remove_nfs_client(client_ip):
         print(f"Error: {e}")
         return False
     
-# Helper function to generate breadcrumb path segments
-def generate_breadcrumb(path):
-    path_segments = []
-    current_path = ""
-    for segment in path.split('/'):
-        if segment:
-            current_path += '/' + segment
-            path_segments.append((segment, url_for('index', path=current_path)))
-    return path_segments
+@app.route('/client_files')
+def client_files():
+    client = request.args.get('client')
+    client_dir = os.path.join(EXPORT_DIR, client)
 
-# Updated route with file viewing capability and breadcrumbs
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    if request.method == 'POST':
-        if 'add_client' in request.form:
-            client_ip = request.form['client_ip']
-            if add_nfs_client(client_ip):
-                flash(f"NFS Client {client_ip} added successfully!", 'success')
-            else:
-                flash(f"Failed to add NFS Client {client_ip}.", 'danger')
-        elif 'remove_client' in request.form:
-            client_ip = request.form['remove_client']
-            if remove_nfs_client(client_ip):
-                flash(f"NFS Client {client_ip} removed successfully!", 'success')
-            else:
-                flash(f"Failed to remove NFS Client {client_ip}.", 'danger')
-        return redirect(url_for('index'))
-
-    # Current NFS clients
-    nfs_clients = []
-    if os.path.exists('/etc/exports'):
-        with open('/etc/exports', 'r') as exports_file:
-            for line in exports_file:
-                if EXPORT_DIR in line:
-                    parts = line.strip().split()
-                    if len(parts) > 1:
-                        client_ip = parts[1].split('(')[0]
-                        nfs_clients.append(client_ip)
-
-    # File Explorer
-    path = request.args.get('path', EXPORT_DIR)
+    # List files if client directory exists
     file_list = []
-    if os.path.exists(path):
-        for item in os.listdir(path):
-            item_path = os.path.join(path, item)
+    if os.path.exists(client_dir):
+        for item in os.listdir(client_dir):
+            item_path = os.path.join(client_dir, item)
             file_list.append({'name': item, 'path': item_path, 'is_dir': os.path.isdir(item_path)})
 
-    # Breadcrumbs
-    path_segments = generate_breadcrumb(path)
-    current_segment = os.path.basename(path)
+    return jsonify(files=file_list)
 
-    return render_template('index.html', nfs_clients=nfs_clients, file_list=file_list, path_segments=path_segments, current_segment=current_segment)
-
-# New route to handle file viewing
 @app.route('/view_file')
 def view_file():
     file_path = request.args.get('file_path')

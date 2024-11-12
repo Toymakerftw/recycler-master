@@ -41,9 +41,16 @@
                 {% for client in nfs_clients %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         {{ client }}
-                        <form method="POST" class="d-inline">
-                            <button type="submit" name="remove_client" value="{{ client }}" class="btn btn-danger btn-sm">Remove</button>
-                        </form>
+                        <div>
+                            <!-- File Explorer Icon -->
+                            <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#fileExplorerModal" onclick="loadClientFiles('{{ client }}')">
+                                <i class="fas fa-folder-open"></i> View Files
+                            </button>
+                            <!-- Remove Client Button -->
+                            <form method="POST" class="d-inline">
+                                <button type="submit" name="remove_client" value="{{ client }}" class="btn btn-danger btn-sm">Remove</button>
+                            </form>
+                        </div>
                     </li>
                 {% endfor %}
             </ul>
@@ -51,35 +58,52 @@
             <p>No NFS clients currently configured.</p>
         {% endif %}
 
-        <!-- File Explorer -->
-        <h2>File Explorer</h2>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                {% for segment, url in path_segments %}
-                    <li class="breadcrumb-item">
-                        <a href="{{ url }}">{{ segment }}</a>
-                    </li>
-                {% endfor %}
-                <li class="breadcrumb-item active" aria-current="page">{{ current_segment }}</li>
-            </ol>
-        </nav>
-
-        <ul class="list-group">
-            {% for item in file_list %}
-                <li class="list-group-item">
-                    {% if item.is_dir %}
-                        <a href="{{ url_for('index', path=item.path) }}">
-                            <strong>{{ item.name }}/</strong>
-                        </a>
-                    {% else %}
-                        {{ item.name }}
-                        <a href="{{ url_for('view_file', file_path=item.path) }}" class="btn btn-sm btn-secondary float-right">View</a>
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
+        <!-- File Explorer Modal -->
+        <div class="modal fade" id="fileExplorerModal" tabindex="-1" role="dialog" aria-labelledby="fileExplorerModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="fileExplorerModalLabel">File Explorer</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <ul class="list-group" id="fileList">
+                            <!-- File items will be dynamically inserted here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <!-- JavaScript to load files -->
+    <script>
+        function loadClientFiles(client) {
+            fetch(`{{ url_for('client_files') }}?client=${client}`)
+                .then(response => response.json())
+                .then(data => {
+                    const fileList = document.getElementById("fileList");
+                    fileList.innerHTML = '';  // Clear previous files
+
+                    data.files.forEach(item => {
+                        const listItem = document.createElement("li");
+                        listItem.classList.add("list-group-item");
+
+                        if (item.is_dir) {
+                            listItem.innerHTML = `<strong>${item.name}/</strong>`;
+                        } else {
+                            listItem.innerHTML = `${item.name} <a href="{{ url_for('view_file') }}?file_path=${item.path}" class="btn btn-sm btn-secondary float-right">View</a>`;
+                        }
+                        fileList.appendChild(listItem);
+                    });
+                })
+                .catch(error => console.error('Error loading files:', error));
+        }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
