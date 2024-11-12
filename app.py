@@ -94,15 +94,28 @@ def client_files():
     client_dir = os.path.join(EXPORT_DIR, client)
 
     # List files if client directory exists
+    def list_files(path):
+        files = []
+        for item in os.listdir(path):
+            item_path = os.path.join(path, item)
+            if os.path.isdir(item_path):
+                files.append({
+                    'name': item,
+                    'path': item_path,
+                    'is_dir': True,
+                    'children': list_files(item_path)
+                })
+            else:
+                files.append({
+                    'name': item,
+                    'path': item_path,
+                    'is_dir': False
+                })
+        return files
+
     file_list = []
     if os.path.exists(client_dir):
-        for item in os.listdir(client_dir):
-            item_path = os.path.join(client_dir, item)
-            file_list.append({
-                'name': item,
-                'path': item_path,
-                'is_dir': os.path.isdir(item_path)
-            })
+        file_list = list_files(client_dir)
 
     return jsonify(files=file_list)
 
@@ -116,4 +129,4 @@ def view_file():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)
