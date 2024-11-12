@@ -1,11 +1,14 @@
 from flask import Flask, render_template, jsonify
 import psutil
 import sqlite3
+import os
 from datetime import datetime
 import time
 from threading import Thread
 
 app = Flask(__name__)
+
+EXPORT_DIR = "/export"  # Define the directory that is exported via NFS
 
 # Database setup
 def init_db():
@@ -23,6 +26,19 @@ def init_db():
     conn.commit()
     conn.close()
 
+# Fetch the connected NFS clients from /etc/exports
+def get_connected_agent_count():
+    nfs_clients = set()  # Use a set to avoid duplicate IPs
+    if os.path.exists('/etc/exports'):
+        with open('/etc/exports', 'r') as exports_file:
+            for line in exports_file:
+                if EXPORT_DIR in line:
+                    parts = line.strip().split()
+                    if len(parts) > 1:
+                        client_ip = parts[1].split('(')[0]
+                        nfs_clients.add(client_ip)
+    return len(nfs_clients)
+
 # Collect metrics and store in the database
 def collect_metrics():
     while True:
@@ -36,7 +52,7 @@ def collect_metrics():
                   (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), cpu_usage, memory_usage, disk_usage))
         conn.commit()
         conn.close()
-        time.sleep(30)  # Collect metrics every minute
+        time.sleep(30)  # Collect metrics every 30 seconds
 
 @app.route('/')
 def dashboard():
@@ -63,7 +79,7 @@ def dashboard():
 def get_metrics():
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
-    c.execute('SELECT timestamp, cpu_usage, memory_usage, disk_usage FROM metrics ORDER BY timestamp ASC')
+    c.execute('SELECT timestamp, cpu_usage, memory_usage, disk_usage FROM metrics ORDER BY timestamp ASC LIMIT 50')
     metrics = c.fetchall()
     conn.close()
 
@@ -72,11 +88,15 @@ def get_metrics():
     memory_usages = [row[2] for row in metrics]
     disk_usages = [row[3] for row in metrics]
 
+    # Add agent count to the metrics data
+    agent_count = get_connected_agent_count()
+
     return jsonify({
         'timestamps': timestamps,
         'cpu_usages': cpu_usages,
         'memory_usages': memory_usages,
-        'disk_usages': disk_usages
+        'disk_usages': disk_usages,
+        'agent_count': agent_count
     })
 
 if __name__ == '__main__':
