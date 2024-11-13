@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, json
 import psutil
 import sqlite3
 import os
@@ -8,6 +8,7 @@ import time
 from threading import Thread
 
 app = Flask(__name__)
+app.secret_key = 'your_secret_key'  # Replace with a secure key
 
 # Configuration
 EXPORT_DIR = "/mnt/recyclebin"
@@ -166,6 +167,28 @@ def client_files():
         return files
 
     return jsonify(files=list_files(client_dir) if os.path.exists(client_dir) else [])
+
+@app.route('/client_log')
+def client_log():
+    """Serve the contents of the log file for the specified client."""
+    client = request.args.get('client')
+    log_file_path = os.path.join(EXPORT_DIR, client, 'cbin.log')
+
+    if client and os.path.isfile(log_file_path):
+        with open(log_file_path, 'r') as log_file:
+            log_entries = [json.loads(line) for line in log_file]
+
+        # Format log entries as a table
+        table = "<table><tr><th>Time</th><th>Level</th><th>Message</th></tr>"
+        for entry in log_entries:
+            # Add a class attribute to the table row based on the log level
+            row_class = 'bg-red-100' if entry['level'] == 'error' else ''
+            table += f"<tr class='{row_class}'><td>{entry['time']}</td><td>{entry['level']}</td><td>{entry['msg']}</td></tr>"
+        table += "</table>"
+
+        return table
+
+    return "Log file not found.", 404
 
 @app.route('/view_file')
 def view_file():
