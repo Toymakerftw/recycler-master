@@ -1,123 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NFS Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/MaterialDesign-Webfont/7.4.47/css/materialdesignicons.min.css">
-  <link
-  href="https://cdn.jsdelivr.net/npm/@tailwindcss/forms@0.3.3/dist/forms.min.css"
-  rel="stylesheet"
-/>
-  <style>
-    .sidebar-expanded {
-      width: 256px;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NFS Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/MaterialDesign-Webfont/7.4.47/css/materialdesignicons.min.css"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/@tailwindcss/forms@0.3.3/dist/forms.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+  </head>
+  <body class="min-h-screen flex bg-gray-100">
+    <!-- Overlay for mobile -->
+    <div
+      id="overlay"
+      class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden transition-opacity duration-300"
+      onclick="toggleSidebar()"
+    ></div>
 
-    .sidebar-collapsed {
-      width: 64px;
-    }
+    <!-- Sidebar -->
+    <div
+      id="sidebar"
+      class="sidebar-collapsed md:sidebar-expanded flex flex-col bg-white shadow-lg min-h-screen transition-all duration-300 ease-in-out"
+    >
+      <!-- Sidebar Toggle Button -->
+      <button
+        onclick="toggleSidebar()"
+        class="p-4 text-gray-500 hover:text-gray-600 focus:outline-none"
+      >
+        <i
+          id="sidebar-toggle-icon"
+          class="mdi mdi-menu text-2xl transition-transform duration-300"
+        ></i>
+      </button>
 
-    /* Hide text in collapsed mode */
-    .sidebar-collapsed .nav-text,
-    .sidebar-collapsed .user-info {
-      opacity: 0;
-    }
+      <!-- Navigation Links -->
+      <nav class="flex-1 space-y-2 p-2">
+        <a
+          href="/"
+          class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <i class="mdi mdi-view-dashboard text-2xl"></i>
+          <span
+            class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300"
+            >Dashboard</span
+          >
+        </a>
+        <a
+          href="/agent"
+          class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <i class="mdi mdi-account-group text-2xl"></i>
+          <span
+            class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300"
+            >Agents</span
+          >
+        </a>
+        <a
+          href="#"
+          class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <i class="mdi mdi-database text-2xl"></i>
+          <span
+            class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300"
+            >Storage</span
+          >
+        </a>
+        <a
+          href="#"
+          class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <i class="mdi mdi-chart-bar text-2xl"></i>
+          <span
+            class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300"
+            >Analytics</span
+          >
+        </a>
+        <a
+          href="#"
+          class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <i class="mdi mdi-bell text-2xl"></i>
+          <span
+            class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300"
+            >Alerts</span
+          >
+        </a>
+        <a
+          href="#"
+          class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <i class="mdi mdi-cog text-2xl"></i>
+          <span
+            class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300"
+            >Settings</span
+          >
+        </a>
+      </nav>
 
-    .sidebar-expanded .nav-text,
-    .sidebar-expanded .user-info {
-      opacity: 1;
-    }
-
-    @media (max-width: 768px) {
-      .sidebar-expanded {
-        position: fixed;
-        z-index: 50;
-        height: 100vh;
-      }
-    }
-    
-        /* Enhanced user info animations */
-    .user-section {
-      overflow: hidden;
-      transition: all 0.3s ease-in-out;
-      padding: 1rem 0.5rem;
-    }
-
-    .user-avatar {
-      transition: all 0.3s ease-in-out;
-      padding: 1rem 0.5rem;
-    }
-
-    .sidebar-collapsed .user-avatar {
-      transform: scale(0.9);
-    }
-
-    .user-info {
-      transition: all 0.3s ease-in-out;
-      width: auto;
-      white-space: nowrap;
-    }
-
-    .sidebar-collapsed .user-info {
-      width: 0;
-      transform: translateX(-20px);
-      opacity: 0;
-    }
-
-    .sidebar-expanded .user-info {
-      width: auto;
-      transform: translateX(0);
-      opacity: 1;
-    }
-    
-  </style>
-</head>
-<body class="min-h-screen flex bg-gray-100">
-  <!-- Overlay for mobile -->
-  <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden transition-opacity duration-300" onclick="toggleSidebar()"></div>
-
-  <!-- Sidebar -->
-  <div id="sidebar" class="sidebar-collapsed md:sidebar-expanded flex flex-col bg-white shadow-lg min-h-screen transition-all duration-300 ease-in-out">
-    <!-- Sidebar Toggle Button -->
-    <button onclick="toggleSidebar()" class="p-4 text-gray-500 hover:text-gray-600 focus:outline-none">
-      <i id="sidebar-toggle-icon" class="mdi mdi-menu text-2xl transition-transform duration-300"></i>
-    </button>
-
-    <!-- Navigation Links -->
-    <nav class="flex-1 space-y-2 p-2">
-      <a href="/" class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-        <i class="mdi mdi-view-dashboard text-2xl"></i>
-        <span class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300">Dashboard</span>
-      </a>
-      <a href="/agent" class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-        <i class="mdi mdi-account-group text-2xl"></i>
-        <span class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300">Agents</span>
-      </a>
-      <a href="#" class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-        <i class="mdi mdi-database text-2xl"></i>
-        <span class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300">Storage</span>
-      </a>
-      <a href="#" class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-        <i class="mdi mdi-chart-bar text-2xl"></i>
-        <span class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300">Analytics</span>
-      </a>
-      <a href="#" class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-        <i class="mdi mdi-bell text-2xl"></i>
-        <span class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300">Alerts</span>
-      </a>
-      <a href="#" class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-        <i class="mdi mdi-cog text-2xl"></i>
-        <span class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300">Settings</span>
-      </a>
-    </nav>
-
-    <!-- User Info -->
-    <div class="user-section border-t border-gray-200">
+      <!-- User Info -->
+      <div class="user-section border-t border-gray-200">
         <div class="flex items-center">
-          <div class="user-avatar h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
+          <div
+            class="user-avatar h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0"
+          >
             <i class="mdi mdi-account text-gray-600"></i>
           </div>
           <div class="user-info ml-3">
@@ -126,20 +121,40 @@
           </div>
         </div>
       </div>
-  </div>
+    </div>
 
-  <!-- Main Content -->
-  <div id="main-content" class="flex-1 p-6 transition-all duration-300">
-    <div class="max-w-7xl mx-auto">
-      <div class="min-h-screen p-6">
-        <div class="max-w-7xl mx-auto">
-          <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold text-gray-900">
-              NFS Master Node Dashboard
-            </h1>
-            <div class="flex items-center space-x-4">
+    <!-- Main Content -->
+    <div id="main-content" class="flex-1 p-6 transition-all duration-300">
+      <div class="max-w-7xl mx-auto">
+        <div class="min-h-screen p-6">
+          <div class="max-w-7xl mx-auto">
+            <div class="flex justify-between items-center mb-6">
+              <h1 class="text-3xl font-bold text-gray-900">
+                NFS Master Node Dashboard
+              </h1>
+              <div class="flex items-center space-x-4">
+                <svg
+                  class="h-5 w-5 text-gray-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2zm0 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+                <span class="text-sm text-gray-600" id="last-updated"
+                  >Last Updated: {{ last_updated }}</span
+                >
+              </div>
+            </div>
+
+            <!-- Alerts Section -->
+            <div class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
               <svg
-                class="h-5 w-5 text-gray-500"
+                class="h-4 w-4 text-red-500 inline-block"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
@@ -150,326 +165,134 @@
                   clip-rule="evenodd"
                 ></path>
               </svg>
-              <span class="text-sm text-gray-600" id="last-updated"
-                >Last Updated: {{ last_updated }}</span
-              >
+              <strong class="text-red-500">Critical Alert:</strong> High disk
+              utilization detected (<span id="disk-usage">{{ disk_usage }}</span
+              >% used)
             </div>
-          </div>
-  
-          <!-- Alerts Section -->
-          <div class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
-            <svg
-              class="h-4 w-4 text-red-500 inline-block"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
+
+            <!-- Key Metrics Grid -->
+            <div
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
             >
-              <path
-                fill-rule="evenodd"
-                d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2zm0 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"
-                clip-rule="evenodd"
-              ></path>
-            </svg>
-            <strong class="text-red-500">Critical Alert:</strong> High disk
-            utilization detected (<span id="disk-usage">{{ disk_usage }}</span>%
-            used)
-          </div>
-  
-          <!-- Key Metrics Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg">
-              <div class="flex items-center">
-                <svg
-                  class="h-8 w-8 text-blue-500 mr-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2zm0 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"
-                    clip-rule="evenodd"
-                  ></path>
-                </svg>
-                <div>
-                  <p class="text-sm text-gray-500">CPU Usage</p>
-                  <p class="text-2xl font-bold" id="cpu-usage">
-                    {{ cpu_usage }}%
-                  </p>
+              <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg">
+                <div class="flex items-center">
+                  <svg
+                    class="h-8 w-8 text-blue-500 mr-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2zm0 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"
+                      clip-rule="evenodd"
+                    ></path>
+                  </svg>
+                  <div>
+                    <p class="text-sm text-gray-500">CPU Usage</p>
+                    <p class="text-2xl font-bold" id="cpu-usage">
+                      {{ cpu_usage }}%
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg">
+                <div class="flex items-center">
+                  <svg
+                    class="h-8 w-8 text-blue-500 mr-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2zm0 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"
+                      clip-rule="evenodd"
+                    ></path>
+                  </svg>
+                  <div>
+                    <p class="text-sm text-gray-500">Memory Usage</p>
+                    <p class="text-2xl font-bold" id="memory-usage">
+                      {{ memory_usage }}%
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg">
+                <div class="flex items-center">
+                  <svg
+                    class="h-8 w-8 text-blue-500 mr-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2zm0 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"
+                      clip-rule="evenodd"
+                    ></path>
+                  </svg>
+                  <div>
+                    <p class="text-sm text-gray-500">Disk Usage</p>
+                    <p class="text-2xl font-bold" id="disk-usage">
+                      {{ disk_usage }}%
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg">
+                <div class="flex items-center">
+                  <svg
+                    class="h-8 w-8 text-blue-500 mr-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2zm0 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"
+                      clip-rule="evenodd"
+                    ></path>
+                  </svg>
+                  <div>
+                    <p class="text-sm text-gray-500">Connected Agents</p>
+                    <p class="text-2xl font-bold" id="agent-count">
+                      {{ agent_count }}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-            <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg">
-              <div class="flex items-center">
-                <svg
-                  class="h-8 w-8 text-blue-500 mr-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2zm0 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"
-                    clip-rule="evenodd"
-                  ></path>
-                </svg>
-                <div>
-                  <p class="text-sm text-gray-500">Memory Usage</p>
-                  <p class="text-2xl font-bold" id="memory-usage">
-                    {{ memory_usage }}%
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">CPU Utilization</h2>
+                <canvas id="cpuChart" class="h-64"></canvas>
+              </div>
+              <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">Memory Usage</h2>
+                <canvas id="memoryChart" class="h-64"></canvas>
+              </div>
+              <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">Disk Usage</h2>
+                <canvas id="diskChart" class="h-64"></canvas>
+              </div>
+              <!-- Agent Health Section -->
+              <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-4">Agent Health</h2>
+                <div id="agent-health-section">
+                  <!-- Placeholder for agent health data -->
+                  <p class="text-sm text-gray-500">
+                    Loading agent health data...
                   </p>
                 </div>
-              </div>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg">
-              <div class="flex items-center">
-                <svg
-                  class="h-8 w-8 text-blue-500 mr-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2zm0 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"
-                    clip-rule="evenodd"
-                  ></path>
-                </svg>
-                <div>
-                  <p class="text-sm text-gray-500">Disk Usage</p>
-                  <p class="text-2xl font-bold" id="disk-usage">
-                    {{ disk_usage }}%
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg">
-              <div class="flex items-center">
-                <svg
-                  class="h-8 w-8 text-blue-500 mr-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2zm0 14a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"
-                    clip-rule="evenodd"
-                  ></path>
-                </svg>
-                <div>
-                  <p class="text-sm text-gray-500">Connected Agents</p>
-                  <p class="text-2xl font-bold" id="agent-count">
-                    {{ agent_count }}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-  
-          <!-- Charts Section -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div class="bg-white p-6 rounded-lg shadow">
-              <h2 class="text-xl font-semibold mb-4">CPU Utilization</h2>
-              <canvas id="cpuChart" class="h-64"></canvas>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow">
-              <h2 class="text-xl font-semibold mb-4">Memory Usage</h2>
-              <canvas id="memoryChart" class="h-64"></canvas>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow">
-              <h2 class="text-xl font-semibold mb-4">Disk Usage</h2>
-              <canvas id="diskChart" class="h-64"></canvas>
-            </div>
-            <!-- Agent Health Section -->
-            <div class="bg-white p-6 rounded-lg shadow">
-              <h2 class="text-xl font-semibold mb-4">Agent Health</h2>
-              <div id="agent-health-section">
-                <!-- Placeholder for agent health data -->
-                <p class="text-sm text-gray-500">Loading agent health data...</p>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-  <script>
-
-      // Initial chart setup
-      let cpuChart, memoryChart, diskChart;
-
-      function initCharts() {
-        const ctxCpu = document.getElementById("cpuChart").getContext("2d");
-        const ctxMemory = document
-          .getElementById("memoryChart")
-          .getContext("2d");
-        const ctxDisk = document.getElementById("diskChart").getContext("2d");
-
-        cpuChart = new Chart(ctxCpu, {
-          type: "line",
-          data: {
-            labels: [],
-            datasets: [
-              {
-                label: "CPU Utilization",
-                data: [],
-                borderColor: "#3b82f6",
-                fill: false,
-              },
-            ],
-          },
-        });
-
-        memoryChart = new Chart(ctxMemory, {
-          type: "line",
-          data: {
-            labels: [],
-            datasets: [
-              {
-                label: "Memory Usage",
-                data: [],
-                borderColor: "#10b981",
-                fill: false,
-              },
-            ],
-          },
-        });
-
-        diskChart = new Chart(ctxDisk, {
-          type: "line",
-          data: {
-            labels: [],
-            datasets: [
-              {
-                label: "Disk Usage",
-                data: [],
-                borderColor: "#f43f5e",
-                fill: false,
-              },
-            ],
-          },
-        });
-      }
-
-      function updateAgentHealth(data) {
-        const agentHealthSection = document.getElementById(
-          "agent-health-section"
-        );
-        agentHealthSection.innerHTML = ""; // Clear any existing content
-
-        if (data.agent_health) {
-          // Check if data.agent_health is defined
-          data.agent_health.forEach((agent) => {
-            const healthBadge =
-              agent.health_badge === "Healthy"
-                ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Healthy</span>'
-                : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Unhealthy</span>';
-
-            const agentInfo = `
-        <p class="text-sm text-gray-500">
-          ${agent.privateip} - ${agent.hostname} - ${healthBadge}
-        </p>
-      `;
-
-            agentHealthSection.innerHTML += agentInfo;
-          });
-        } else {
-          agentHealthSection.innerHTML =
-            '<p class="text-sm text-gray-500">No agent health data available.</p>';
-        }
-      }
-
-      function updateMetrics(data) {
-        document.getElementById("cpu-usage").textContent = `${
-          data.cpu_usages[data.cpu_usages.length - 1]
-        }%`;
-        document.getElementById("memory-usage").textContent = `${
-          data.memory_usages[data.memory_usages.length - 1]
-        }%`;
-        document.getElementById("disk-usage").textContent = `${
-          data.disk_usages[data.disk_usages.length - 1]
-        }%`;
-        document.getElementById("agent-count").textContent = data.agent_count;
-        document.getElementById(
-          "last-updated"
-        ).textContent = `Last Updated: ${new Date().toLocaleTimeString()}`;
-      }
-
-      function updateCharts(data) {
-        cpuChart.data.labels = data.timestamps;
-        cpuChart.data.datasets[0].data = data.cpu_usages;
-        cpuChart.update();
-
-        memoryChart.data.labels = data.timestamps;
-        memoryChart.data.datasets[0].data = data.memory_usages;
-        memoryChart.update();
-
-        diskChart.data.labels = data.timestamps;
-        diskChart.data.datasets[0].data = data.disk_usages;
-        diskChart.update();
-      }
-
-      function fetchData() {
-        fetch("/metrics")
-          .then((response) => response.json())
-          .then((data) => {
-            updateMetrics(data);
-            updateCharts(data);
-            updateAgentHealth(data);
-          })
-          .catch((error) => console.error("Error fetching metrics:", error));
-      }
-
-      // Initialize charts and start fetching data every 5 seconds
-      initCharts();
-      fetchData();
-      setInterval(fetchData, 5000);
-
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.getElementById('main-content');
-    const overlay = document.getElementById('overlay');
-    const toggleIcon = document.getElementById('sidebar-toggle-icon');
-    
-    function toggleSidebar() {
-      const isExpanded = sidebar.classList.contains('sidebar-expanded');
-      
-      // Toggle sidebar classes
-      sidebar.classList.toggle('sidebar-collapsed');
-      sidebar.classList.toggle('sidebar-expanded');
-      
-      // Toggle overlay on mobile
-      if (window.innerWidth < 768) {
-        overlay.classList.toggle('hidden');
-      }
-      
-      // Toggle menu icon
-      toggleIcon.classList.toggle('mdi-menu');
-      toggleIcon.classList.toggle('mdi-menu-open');
-    }
-
-    // Initial setup
-    const mediaQuery = window.matchMedia('(min-width: 768px)');
-    
-    function handleScreenChange(e) {
-      const isDesktop = e.matches;
-      const isExpanded = sidebar.classList.contains('sidebar-expanded');
-      
-      if (isDesktop && !isExpanded) {
-        toggleSidebar();
-      } else if (!isDesktop && isExpanded) {
-        toggleSidebar();
-      }
-      
-      // Always hide overlay on desktop
-      if (isDesktop) {
-        overlay.classList.add('hidden');
-      }
-    }
-
-    // Set up initial state
-    handleScreenChange(mediaQuery);
-    mediaQuery.addListener(handleScreenChange);
-  </script>
-</body>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+  </body>
 </html>
