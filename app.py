@@ -147,12 +147,22 @@ def manage_agents():
 
     return render_template('agent.html', nfs_clients=get_nfs_clients())
 
+def find_client_dir(client_ip):
+    """Find the directory for the client based on the private IP."""
+    for item in os.listdir(EXPORT_DIR):
+        if item.startswith(client_ip):  # Match the private IP part
+            return os.path.join(EXPORT_DIR, item)
+    return None
+
 @app.route('/client_files')
 def client_files():
     """Retrieve files in the specified client's directory and return as JSON."""
-    client = request.args.get('client')
-    client_dir = os.path.join(EXPORT_DIR, client)
+    client_ip = request.args.get('client')
+    client_dir = find_client_dir(client_ip)
     
+    if not client_dir:
+        return jsonify(files=[], error="Client directory not found.")
+
     def list_files(path):
         """List all files and directories within a given path."""
         files = []
@@ -166,15 +176,19 @@ def client_files():
             })
         return files
 
-    return jsonify(files=list_files(client_dir) if os.path.exists(client_dir) else [])
+    return jsonify(files=list_files(client_dir))
 
 @app.route('/client_log')
 def client_log():
     """Serve the contents of the log file for the specified client."""
-    client = request.args.get('client')
-    log_file_path = os.path.join(EXPORT_DIR, client, 'cbin.log')
+    client_ip = request.args.get('client')
+    client_dir = find_client_dir(client_ip)
+    
+    if not client_dir:
+        return "Client directory not found.", 404
 
-    if client and os.path.isfile(log_file_path):
+    log_file_path = os.path.join(client_dir, 'cbin.log')
+    if os.path.isfile(log_file_path):
         with open(log_file_path, 'r') as log_file:
             log_entries = [json.loads(line) for line in log_file]
 
