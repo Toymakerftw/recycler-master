@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NFS Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/MaterialDesign-Webfont/7.4.47/css/materialdesignicons.min.css">
+  <style>
+    .sidebar-expanded {
+      width: 256px;
+    }
+
+    .sidebar-collapsed {
+      width: 64px;
+    }
+
+    /* Hide text in collapsed mode */
+    .sidebar-collapsed .nav-text,
+    .sidebar-collapsed .user-info {
+      opacity: 0;
+    }
+
+    .sidebar-expanded .nav-text,
+    .sidebar-expanded .user-info {
+      opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar-expanded {
+        position: fixed;
+        z-index: 50;
+        height: 100vh;
+      }
+    }
+    
+        /* Enhanced user info animations */
+    .user-section {
+      overflow: hidden;
+      transition: all 0.3s ease-in-out;
+      padding: 1rem 0.5rem;
+    }
+
+    .user-avatar {
+      transition: all 0.3s ease-in-out;
+      padding: 1rem 0.5rem;
+    }
+
+    .sidebar-collapsed .user-avatar {
+      transform: scale(0.9);
+    }
+
+    .user-info {
+      transition: all 0.3s ease-in-out;
+      width: auto;
+      white-space: nowrap;
+    }
+
+    .sidebar-collapsed .user-info {
+      width: 0;
+      transform: translateX(-20px);
+      opacity: 0;
+    }
+
+    .sidebar-expanded .user-info {
+      width: auto;
+      transform: translateX(0);
+      opacity: 1;
+    }
+    
+  </style>
+</head>
+<body class="min-h-screen flex bg-gray-100">
+  <!-- Overlay for mobile -->
+  <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden transition-opacity duration-300" onclick="toggleSidebar()"></div>
+
+  <!-- Sidebar -->
+  <div id="sidebar" class="sidebar-collapsed md:sidebar-expanded flex flex-col bg-white shadow-lg min-h-screen transition-all duration-300 ease-in-out">
+    <!-- Sidebar Toggle Button -->
+    <button onclick="toggleSidebar()" class="p-4 text-gray-500 hover:text-gray-600 focus:outline-none">
+      <i id="sidebar-toggle-icon" class="mdi mdi-menu text-2xl transition-transform duration-300"></i>
+    </button>
+
+    <!-- Navigation Links -->
+    <nav class="flex-1 space-y-2 p-2">
+      <a href="/" class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+        <i class="mdi mdi-view-dashboard text-2xl"></i>
+        <span class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300">Dashboard</span>
+      </a>
+      <a href="/agent" class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+        <i class="mdi mdi-account-group text-2xl"></i>
+        <span class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300">Agents</span>
+      </a>
+      <a href="#" class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+        <i class="mdi mdi-database text-2xl"></i>
+        <span class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300">Storage</span>
+      </a>
+      <a href="#" class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+        <i class="mdi mdi-chart-bar text-2xl"></i>
+        <span class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300">Analytics</span>
+      </a>
+      <a href="#" class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+        <i class="mdi mdi-bell text-2xl"></i>
+        <span class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300">Alerts</span>
+      </a>
+      <a href="#" class="flex items-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+        <i class="mdi mdi-cog text-2xl"></i>
+        <span class="nav-text ml-3 whitespace-nowrap opacity-0 transition-opacity duration-300">Settings</span>
+      </a>
+    </nav>
+
+    <!-- User Info -->
+    <div class="user-section border-t border-gray-200">
+        <div class="flex items-center">
+          <div class="user-avatar h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
+            <i class="mdi mdi-account text-gray-600"></i>
+          </div>
+          <div class="user-info ml-3">
+            <p class="text-sm font-medium text-gray-900">Admin User</p>
+            <p class="text-xs text-gray-500">admin@example.com</p>
+          </div>
+        </div>
+      </div>
+  </div>
+
+  <!-- Main Content -->
+  <div id="main-content" class="flex-1 p-6 transition-all duration-300">
+    <div class="max-w-7xl mx-auto">
+      <!-- Main content goes here -->
+      <h1 class="text-2xl font-semibold text-gray-900">Dashboard Content</h1>
+    </div>
+  </div>
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('main-content');
+    const overlay = document.getElementById('overlay');
+    const toggleIcon = document.getElementById('sidebar-toggle-icon');
+    
+    function toggleSidebar() {
+      const isExpanded = sidebar.classList.contains('sidebar-expanded');
+      
+      // Toggle sidebar classes
+      sidebar.classList.toggle('sidebar-collapsed');
+      sidebar.classList.toggle('sidebar-expanded');
+      
+      // Toggle overlay on mobile
+      if (window.innerWidth < 768) {
+        overlay.classList.toggle('hidden');
+      }
+      
+      // Toggle menu icon
+      toggleIcon.classList.toggle('mdi-menu');
+      toggleIcon.classList.toggle('mdi-menu-open');
+    }
+
+    // Initial setup
+    const mediaQuery = window.matchMedia('(min-width: 768px)');
+    
+    function handleScreenChange(e) {
+      const isDesktop = e.matches;
+      const isExpanded = sidebar.classList.contains('sidebar-expanded');
+      
+      if (isDesktop && !isExpanded) {
+        toggleSidebar();
+      } else if (!isDesktop && isExpanded) {
+        toggleSidebar();
+      }
+      
+      // Always hide overlay on desktop
+      if (isDesktop) {
+        overlay.classList.add('hidden');
+      }
+    }
+
+    // Set up initial state
+    handleScreenChange(mediaQuery);
+    mediaQuery.addListener(handleScreenChange);
+  </script>
+</body>
+</html>
