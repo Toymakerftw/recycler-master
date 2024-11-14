@@ -12,8 +12,10 @@ EXPORT_DIR = "/mnt/recyclebin"
 PERMISSIONS = "rw,sync,no_subtree_check"
 DB_PATH = 'node.db'
 
+# Initialize routes
+init_routes(app)
+
 if __name__ == '__main__':
     init_db()
     Thread(target=collect_metrics, daemon=True).start()
-    init_routes(app)
     app.run(host='0.0.0.0', port=5000, debug=True)

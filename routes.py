@@ -2,7 +2,11 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, s
 import sqlite3
 import os
 from database import DB_PATH
-from nfs_utils import get_nfs_clients
+from nfs_utils import get_nfs_clients, add_nfs_client, remove_nfs_client
+import glob
+import pathlib
+
+EXPORT_DIR = "/mnt/recyclebin"
 
 def init_routes(app):
     @app.route('/')
@@ -41,3 +45,115 @@ def init_routes(app):
             'agent_count': len(get_nfs_clients())
         }
         return jsonify(data)
+
+    @app.route('/agent', methods=['GET', 'POST'])
+    def agent():
+        if request.method == 'POST':
+            if 'add_client' in request.form:
+                client_ip = request.form['client_ip']
+                if add_nfs_client(client_ip):
+                    flash(f"NFS Client {client_ip} added successfully!", 'success')
+                else:
+                    flash(f"Failed to add NFS Client {client_ip}.", 'danger')
+            elif 'remove_client' in request.form:
+                client_ip = request.form['remove_client']
+                if remove_nfs_client(client_ip):
+                    flash(f"NFS Client {client_ip} removed successfully!", 'success')
+                else:
+                    flash(f"Failed to remove NFS Client {client_ip}.", 'danger')
+            return redirect(url_for('agent'))
+
+        # Read current NFS clients from /etc/exports
+        nfs_clients = []
+        if os.path.exists('/etc/exports'):
+            with open('/etc/exports', 'r') as exports_file:
+                for line in exports_file:
+                    if EXPORT_DIR in line:
+                        parts = line.strip().split()
+                        if len(parts) > 1:
+                            # Extract client IP address by removing the permissions part
+                            client_ip = parts[1].split('(')[0]
+                            nfs_clients.append(client_ip)
+
+        return render_template('agent.html', nfs_clients=nfs_clients)
+        
+    @app.route('/files/<client_ip>')
+    def get_client_files(client_ip):
+        """Get files for a specific client."""
+        try:
+            # Construct the path using client IP
+            client_path = os.path.join(EXPORT_DIR, client_ip)
+            
+            # Get the relative path from query parameters, default to root
+            rel_path = request.args.get('path', '')
+            current_path = os.path.join(client_path, rel_path)
+            
+            # Ensure the path is still within the client's directory
+            if not os.path.realpath(current_path).startswith(os.path.realpath(client_path)):
+                return jsonify({'error': 'Invalid path'}), 403
+            
+            if not os.path.exists(current_path):
+                return jsonify({'error': 'Path not found'}), 404
+                
+            files = []
+            directories = []
+            
+            # List all files and directories in the current path
+            for item in os.listdir(current_path):
+                item_path = os.path.join(current_path, item)
+                item_stat = os.stat(item_path)
+                item_info = {
+                    'name': item,
+                    'size': item_stat.st_size,
+                    'modified': item_stat.st_mtime,
+                    'is_dir': os.path.isdir(item_path)
+                }
+                
+                if item_info['is_dir']:
+                    directories.append(item_info)
+                else:
+                    files.append(item_info)
+            
+            # Calculate breadcrumb data
+            rel_path_parts = rel_path.split(os.sep) if rel_path else []
+            breadcrumbs = []
+            current = ''
+            for part in rel_path_parts:
+                if part:
+                    current = os.path.join(current, part)
+                    breadcrumbs.append({
+                        'name': part,
+                        'path': current
+                    })
+            
+            return jsonify({
+                'current_path': rel_path,
+                'breadcrumbs': breadcrumbs,
+                'directories': sorted(directories, key=lambda x: x['name']),
+                'files': sorted(files, key=lambda x: x['name'])
+            })
+            
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
+    @app.route('/download/<client_ip>/<path:file_path>')
+    def download_file(client_ip, file_path):
+        """Download a file from a client's directory."""
+        try:
+            # Construct the full file path
+            full_path = os.path.join(EXPORT_DIR, client_ip, file_path)
+            
+            # Ensure the path is still within the client's directory
+            client_dir = os.path.join(EXPORT_DIR, client_ip)
+            if not os.path.realpath(full_path).startswith(os.path.realpath(client_dir)):
+                return jsonify({'error': 'Invalid path'}), 403
+                
+            if not os.path.exists(full_path) or os.path.isdir(full_path):
+                return jsonify({'error': 'File not found'}), 404
+                
+            return send_file(full_path, as_attachment=True)
+            
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+            
+    return app
