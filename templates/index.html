@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prismjs/1.29.0/themes/prism.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prismjs/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prismjs/1.29.0/prism.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prismjs/1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prismjs/1.29.0/components/prism-python.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prismjs/1.29.0/components/prism-javascript.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prismjs/1.29.0/components/prism-css.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prismjs/1.29.0/components/prism-markup.min.js" defer></script>
+    <style>
+        .editor-container {
+            display: flex;
+            overflow: hidden;
+            background-color: white;
+            border: 1px solid #e5e7eb;
+        }
+        .line-numbers-container {
+            position: sticky;
+            left: 0;
+            z-index: 10;
+            background-color: #f8f9fa;
+            border-right: 1px solid #e5e7eb;
+            padding: 1rem 0.5rem;
+            min-width: 3.5rem;
+            text-align: right;
+            user-select: none;
+            overflow-y: auto;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* Internet Explorer 11 */
+        }
+        .line-numbers-container::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, and Opera */
+        }
+        .line-numbers {
+            color: #6b7280;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .editor-content {
+            flex-grow: 1;
+            overflow: auto;
+            padding: 1rem;
+            background-color: white;
+        }
+        .editor-content pre {
+            margin: 0;
+            background: transparent !important;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .editor-content code {
+            background: transparent !important;
+            font-family: inherit;
+            white-space: pre !important;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+        .line-highlight {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="mb-4">
+                <h1 class="text-2xl font-bold text-gray-800">File Explorer</h1>
+                <p id="current-path" class="text-gray-600 mt-2"></p>
+            </div>
+            
+            <div class="mb-4">
+                <button id="back-btn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+            </div>
+
+            <div id="file-list" class="space-y-2"></div>
+
+            <!-- File content modal -->
+            <div id="file-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+                <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-6xl shadow-lg rounded-md bg-white">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center">
+                            <h3 id="modal-title" class="text-lg font-medium text-gray-800"></h3>
+                            <span id="file-info" class="ml-4 text-gray-500 text-sm"></span>
+                        </div>
+                        <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="editor-container h-[70vh] rounded overflow-hidden">
+                        <div class="line-numbers-container" id="line-numbers-container">
+                            <div class="line-numbers" id="line-numbers"></div>
+                        </div>
+                        <div class="editor-content" id="editor-content">
+                            <div class="editor-scroll">
+                                <pre><code id="file-content" class="language-plaintext"></code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPath = '';
+        let prismLoaded = false;
+
+        function isPrismLoaded() {
+            return typeof Prism !== 'undefined';
+        }
+
+        function waitForPrism(callback) {
+            if (isPrismLoaded()) {
+                prismLoaded = true;
+                callback();
+            } else {
+                setTimeout(() => waitForPrism(callback), 100);
+            }
+        }
+
+        async function loadDirectory(path) {
+            try {
+                const response = await fetch(`/browse?path=${encodeURIComponent(path)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentPath = data.current_path;
+                    document.getElementById('current-path').textContent = currentPath;
+                    
+                    const fileList = document.getElementById('file-list');
+                    fileList.innerHTML = '';
+                    
+                    data.items.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'flex items-center p-2 hover:bg-gray-100 rounded cursor-pointer';
+                        
+                        const icon = document.createElement('i');
+                        if (item.is_dir) {
+                            icon.className = 'fas fa-folder text-yellow-500 mr-3';
+                        } else if (item.type === 'text') {
+                            icon.className = 'fas fa-file-alt text-blue-500 mr-3';
+                        } else {
+                            icon.className = 'fas fa-file text-gray-500 mr-3';
+                        }
+                        
+                        const name = document.createElement('span');
+                        name.textContent = item.name;
+                        
+                        div.appendChild(icon);
+                        div.appendChild(name);
+                        
+                        div.addEventListener('click', () => {
+                            if (item.is_dir) {
+                                loadDirectory(item.path);
+                            } else if (item.type === 'text') {
+                                openFile(item.path, item.name);
+                            }
+                        });
+                        
+                        fileList.appendChild(div);
+                    });
+                } else {
+                    alert(data.error || 'Error loading directory');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error loading directory');
+            }
+        }
+
+        async function openFile(path, filename) {
+            try {
+                const response = await fetch(`/file?path=${encodeURIComponent(path)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const fileContent = document.getElementById('file-content');
+                    const lineNumbers = document.getElementById('line-numbers');
+                    const lineNumbersContainer = document.getElementById('line-numbers-container');
+                    const editorContent = document.getElementById('editor-content');
+
+                    // Set content and update line numbers
+                    fileContent.textContent = data.content;
+                    const lines = data.content.split('\n');
+                    lineNumbers.innerHTML = lines.map((_, i) => `<div>${i + 1}</div>`).join('');
+                    
+                    // Set syntax highlighting based on file extension
+                    fileContent.className = getLanguageClass(data.extension);
+                    
+                    // Wait for Prism to load before highlighting
+                    waitForPrism(() => {
+                        try {
+                            Prism.highlightElement(fileContent);
+                        } catch (e) {
+                            console.error('Error highlighting code:', e);
+                        }
+                    });
+                    
+                    // Update file info
+                    document.getElementById('modal-title').textContent = filename;
+                    document.getElementById('file-info').textContent = 
+                        `${lines.length} lines | ${data.extension.toUpperCase()}`;
+                    
+                    document.getElementById('file-modal').classList.remove('hidden');
+
+                    // Sync scroll position
+                    editorContent.addEventListener('scroll', () => {
+                        lineNumbersContainer.scrollTop = editorContent.scrollTop;
+                    });
+                } else {
+                    alert(data.error || 'Error opening file');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error opening file');
+            }
+        }
+
+        function getLanguageClass(extension) {
+            const languageMap = {
+                'py': 'language-python',
+                'js': 'language-javascript',
+                'html': 'language-markup',
+                'css': 'language-css',
+                'json': 'language-javascript',
+                'md': 'language-markdown',
+                'txt': 'language-plaintext'
+            };
+            return languageMap[extension] || 'language-plaintext';
+        }
+
+        document.getElementById('back-btn').addEventListener('click', () => {
+            if (currentPath) {
+                const parentPath = currentPath.split('/').slice(0, -1).join('/');
+                if (parentPath) {
+                    loadDirectory(parentPath);
+                }
+            }
+        });
+
+        document.getElementById('close-modal').addEventListener('click', () => {
+            document.getElementById('file-modal').classList.add('hidden');
+        });
+
+        // Initial load
+        loadDirectory('.');
+    </script>
+</body>
+</html>
