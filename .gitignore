@@ -1,0 +1,24 @@
+# Flask App gitignore
+
+# Python files
+*.pyc
+*.pyo
+__pycache__/
+
+# Virtual environment
+venv/
+
+# Database files
+node.db
+
+# Build files
+build/
+dist/
+
+# Test files
+*.egg-info
+.pytest_cache/
+
+# IDE files
+.idea/
+.vscode/

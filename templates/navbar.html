@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Responsive Sidebar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@mdi/font@6.5.95/css/materialdesignicons.min.css"
+    />
+    <style>
+      /* Sidebar transition for expand/collapse */
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 5rem;
+        transition: width 0.3s ease-in-out;
+        z-index: 999; /* Ensure it's above other content */
+      }
+      .sidebar:hover {
+        width: 16rem;
+      }
+      .sidebar-item span {
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+      }
+      .sidebar:hover .sidebar-item span {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100">
+    <!-- Main wrapper -->
+    <div class="min-h-screen flex">
+      <!-- Sidebar -->
+      <aside
+        id="sidebar"
+        class="bg-white flex flex-col justify-between py-6 sidebar"
+      >
+        <!-- Top section -->
+        <div>
+          <div class="flex items-center justify-center px-4 mb-10">
+            <div class="rounded-md p-7 text-3xl font-bold">
+              <i class="mdi mdi-trash-can-outline h-6 w-6"></i>
+            </div>
+          </div>
+          <!-- Navigation -->
+          <nav class="px-4">
+            <ul class="space-y-2">
+              <li class="sidebar-item">
+                <a
+                  href="#"
+                  class="flex items-center p-3 text-gray-500 hover:text-blue-600 rounded-md group transition-colors"
+                >
+                  <i class="mdi mdi-view-dashboard-outline text-2xl"></i>
+                  <span class="ml-4 text-lg">Dashboard</span>
+                </a>
+              </li>
+              <li class="sidebar-item">
+                <a
+                  href="#"
+                  class="flex items-center p-3 text-gray-500 hover:text-blue-600 rounded-md group transition-colors"
+                >
+                  <i class="mdi mdi-account-group text-2xl"></i>
+                  <span class="ml-4 text-lg">Agents</span>
+                </a>
+              </li>
+              <li class="sidebar-item">
+                <a
+                  href="#"
+                  class="flex items-center p-3 text-gray-500 hover:text-blue-600 rounded-md group transition-colors"
+                >
+                  <i class="mdi mdi-chart-bar text-2xl"></i>
+                  <span class="ml-4 text-lg">Reports</span>
+                </a>
+              </li>
+              <li class="sidebar-item">
+                <a
+                  href="#"
+                  class="flex items-center p-3 text-gray-500 hover:text-blue-600 rounded-md group transition-colors"
+                >
+                  <i class="mdi mdi-chart-line text-2xl"></i>
+                  <span class="ml-4 text-lg">Analytics</span>
+                </a>
+              </li>
+              <li class="sidebar-item">
+                <a
+                  href="#"
+                  class="flex items-center p-3 text-gray-500 hover:text-blue-600 rounded-md group transition-colors"
+                >
+                  <i class="mdi mdi-account text-2xl"></i>
+                  <span class="ml-4 text-lg">Profile</span>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </aside>
+    </div>
+  </body>
+</html>
