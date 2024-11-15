@@ -54,7 +54,7 @@ function initFileExplorer() {
                 let filesHtml = `
                     <div class="space-y-2">
                         ${data.directories.map(dir => `
-                            <div class="flex items-center space-x-2 py-2 hover:bg-gray-100 cursor-pointer"
+                            <div class="flex items-center space-x-2 py-2 px-4 hover:bg-gray-100 cursor-pointer rounded"
                                 onclick="loadFiles('${clientIp}', '${data.current_path ? data.current_path + '/' : ''}${dir.name}')">
                                 <svg class="h-5 w-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                     <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
@@ -64,7 +64,7 @@ function initFileExplorer() {
                         `).join('')}
 
                         ${data.files.map(file => `
-                            <div class="flex items-center justify-between py-2 hover:bg-gray-100">
+                            <div class="flex items-center justify-between py-2 px-4 hover:bg-gray-100 rounded">
                                 <div class="flex items-center space-x-2">
                                     <svg class="h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                         <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
