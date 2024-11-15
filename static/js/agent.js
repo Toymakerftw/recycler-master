@@ -109,3 +109,38 @@ function initFileExplorer() {
 
 // Initialize when the DOM is loaded
 document.addEventListener('DOMContentLoaded', initFileExplorer);
+
+function loadClientLog(client) {
+    fetch(`/client_log?client=${client}`)
+      .then((response) => {
+        if (response.ok) {
+          return response.text();
+        } else {
+          throw new Error("Error loading log: " + response.statusText);
+        }
+      })
+      .then((data) => {
+        document.getElementById("logContent").innerHTML = data;
+        // Apply styles to table rows based on the class attribute
+        const rows = document
+          .getElementById("logContent")
+          .getElementsByTagName("tr");
+        for (let i = 0; i < rows.length; i++) {
+          if (rows[i].classList.contains("bg-red-100")) {
+            rows[i].style.backgroundColor = "#fecaca";
+          }
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        document.getElementById("logContent").textContent = "Error loading log.";
+      });
+  
+    // Open the modal
+    document.getElementById("logViewerModal").style.display = "block";
+  }
+  
+  function closelogModal() {
+    // Close the modal
+    document.getElementById("logViewerModal").style.display = "none";
+  }

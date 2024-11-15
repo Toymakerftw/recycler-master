@@ -76,28 +76,28 @@ def init_routes(app):
                             nfs_clients.append(client_ip)
 
         return render_template('agent.html', nfs_clients=nfs_clients)
-        
+
     @app.route('/files/<client_ip>')
     def get_client_files(client_ip):
         """Get files for a specific client."""
         try:
             # Construct the path using client IP
             client_path = os.path.join(EXPORT_DIR, client_ip)
-            
+
             # Get the relative path from query parameters, default to root
             rel_path = request.args.get('path', '')
             current_path = os.path.join(client_path, rel_path)
-            
+
             # Ensure the path is still within the client's directory
             if not os.path.realpath(current_path).startswith(os.path.realpath(client_path)):
                 return jsonify({'error': 'Invalid path'}), 403
-            
+
             if not os.path.exists(current_path):
                 return jsonify({'error': 'Path not found'}), 404
-                
+
             files = []
             directories = []
-            
+
             # List all files and directories in the current path
             for item in os.listdir(current_path):
                 item_path = os.path.join(current_path, item)
@@ -108,12 +108,12 @@ def init_routes(app):
                     'modified': item_stat.st_mtime,
                     'is_dir': os.path.isdir(item_path)
                 }
-                
+
                 if item_info['is_dir']:
                     directories.append(item_info)
                 else:
                     files.append(item_info)
-            
+
             # Calculate breadcrumb data
             rel_path_parts = rel_path.split(os.sep) if rel_path else []
             breadcrumbs = []
@@ -125,35 +125,56 @@ def init_routes(app):
                         'name': part,
                         'path': current
                     })
-            
+
             return jsonify({
                 'current_path': rel_path,
                 'breadcrumbs': breadcrumbs,
                 'directories': sorted(directories, key=lambda x: x['name']),
                 'files': sorted(files, key=lambda x: x['name'])
             })
-            
+
         except Exception as e:
             return jsonify({'error': str(e)}), 500
-    
+
     @app.route('/download/<client_ip>/<path:file_path>')
     def download_file(client_ip, file_path):
         """Download a file from a client's directory."""
         try:
             # Construct the full file path
             full_path = os.path.join(EXPORT_DIR, client_ip, file_path)
-            
+
             # Ensure the path is still within the client's directory
             client_dir = os.path.join(EXPORT_DIR, client_ip)
             if not os.path.realpath(full_path).startswith(os.path.realpath(client_dir)):
                 return jsonify({'error': 'Invalid path'}), 403
-                
+
             if not os.path.exists(full_path) or os.path.isdir(full_path):
                 return jsonify({'error': 'File not found'}), 404
-                
+
             return send_file(full_path, as_attachment=True)
-            
+
         except Exception as e:
             return jsonify({'error': str(e)}), 500
-            
+
+    @app.route('/client_log')
+    def client_log():
+        """Serve the contents of the log file for the specified client."""
+        client = request.args.get('client')
+        log_file_path = os.path.join(EXPORT_DIR, client, 'cbin.log')
+        if client and os.path.isfile(log_file_path):
+            try:
+                with open(log_file_path, 'r') as log_file:
+                    log_entries = [json.loads(line) for line in log_file]
+                # Format log entries as a table
+                table = "<table><tr><th>Time</th><th>Level</th><th>Message</th></tr>"
+                for entry in log_entries:
+                    # Add a class attribute to the table row based on the log level
+                    row_class = 'bg-red-100' if entry['level'] == 'error' else ''
+                    table += f"<tr class='{row_class}'><td>{entry['time']}</td><td>{entry['level']}</td><td>{entry['msg']}</td></tr>"
+                table += "</table>"
+                return table
+            except Exception as e:
+                return f"Error reading log file: {str(e)}", 500
+        return "Log file not found.", 404
+
     return app
