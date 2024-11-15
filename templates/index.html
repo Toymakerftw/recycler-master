@@ -15,10 +15,8 @@
       rel="stylesheet"
     />
   </head>
+  <header>{% include 'navbar.html' %}</header>
   <body class="min-h-screen flex bg-gray-100">
-    <header>
-        {% include 'navbar.html' %}
-    </header>
     <!-- Main Content -->
     <div id="main-content" class="flex-1 p-6 transition-all duration-300">
       <div class="max-w-7xl mx-auto">
@@ -26,7 +24,7 @@
           <div class="max-w-7xl mx-auto">
             <div class="flex justify-between items-center mb-6">
               <h1 class="text-3xl font-bold text-gray-900">
-                CBIN Master Node Dashboard
+                Master Node Dashboard
               </h1>
               <div class="flex items-center space-x-4">
                 <svg
