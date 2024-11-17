@@ -5,8 +5,31 @@ from database import DB_PATH
 from nfs_utils import get_nfs_clients, add_nfs_client, remove_nfs_client
 import glob
 import pathlib
+import requests
+from threading import Thread
+import time
 
 EXPORT_DIR = "/mnt/recyclebin"
+AGENT_HEALTH_CHECK_INTERVAL = 75  # seconds
+
+agent_health_data = {}
+
+def fetch_agent_health():
+    global agent_health_data
+    while True:
+        print("Fetching agent health data...")
+        nfs_clients = get_nfs_clients()
+        for client_ip in nfs_clients:
+            try:
+                response = requests.get(f"http://{client_ip}:10001/health", timeout=5)
+                if response.status_code == 200:
+                    agent_health_data[client_ip] = response.json()
+                else:
+                    agent_health_data[client_ip] = {"healthy": False}
+            except requests.RequestException:
+                agent_health_data[client_ip] = {"healthy": False}
+        print("Agent health data:", agent_health_data)
+        time.sleep(AGENT_HEALTH_CHECK_INTERVAL)
 
 def init_routes(app):
     @app.route('/')
@@ -176,5 +199,13 @@ def init_routes(app):
             except Exception as e:
                 return f"Error reading log file: {str(e)}", 500
         return "Log file not found.", 404
+
+    @app.route('/agent_health')
+    def agent_health():
+        """Return the health status of all agents."""
+        return jsonify(agent_health_data)
+
+    # Start the background task to fetch agent health data
+    Thread(target=fetch_agent_health, daemon=True).start()
 
     return app

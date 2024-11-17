@@ -52,32 +52,6 @@ function initCharts() {
   });
 }
 
-function updateAgentHealth(data) {
-  const agentHealthSection = document.getElementById("agent-health-section");
-  agentHealthSection.innerHTML = ""; // Clear any existing content
-
-  if (data.agent_health) {
-    // Check if data.agent_health is defined
-    data.agent_health.forEach((agent) => {
-      const healthBadge =
-        agent.health_badge === "Healthy"
-          ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Healthy</span>'
-          : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Unhealthy</span>';
-
-      const agentInfo = `
-        <p class="text-sm text-gray-500">
-          ${agent.privateip} - ${agent.hostname} - ${healthBadge}
-        </p>
-      `;
-
-      agentHealthSection.innerHTML += agentInfo;
-    });
-  } else {
-    agentHealthSection.innerHTML =
-      '<p class="text-sm text-gray-500">No agent health data available.</p>';
-  }
-}
-
 function updateMetrics(data) {
   document.getElementById("cpu-usage").textContent = `${
     data.cpu_usages[data.cpu_usages.length - 1]
@@ -114,7 +88,6 @@ function fetchData() {
     .then((data) => {
       updateMetrics(data);
       updateCharts(data);
-      updateAgentHealth(data);
     })
     .catch((error) => console.error("Error fetching metrics:", error));
 }

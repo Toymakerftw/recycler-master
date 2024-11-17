@@ -187,6 +187,36 @@
         </div>
       </div>
     </div>
+    <script>
+      async function fetchAgentHealth() {
+          const response = await fetch('/agent_health');
+          const data = await response.json();
+          const agentHealthSection = document.getElementById('agent-health-section');
+          agentHealthSection.innerHTML = '';
+
+          for (const [ip, healthData] of Object.entries(data)) {
+              const healthStatus = healthData.healthy !== false ? 'healthy' : 'unhealthy';
+              const badgeClass = healthStatus === 'healthy' ? 'bg-green-500' : 'bg-red-500';
+              const badgeText = healthStatus === 'healthy' ? 'Healthy' : 'Unhealthy';
+
+              const agentDiv = document.createElement('div');
+              agentDiv.classList.add('p-2', 'border-b', 'border-gray-200');
+              agentDiv.innerHTML = `
+                  <div class="flex justify-between items-center">
+                      <span class="text-gray-700">${ip}</span>
+                      <span class="text-white text-sm font-semibold px-2 py-1 rounded ${badgeClass}">${badgeText}</span>
+                  </div>
+              `;
+              agentHealthSection.appendChild(agentDiv);
+          }
+      }
+
+      // Fetch agent health data every 75 seconds
+      setInterval(fetchAgentHealth, 75000);
+
+      // Initial fetch
+      fetchAgentHealth();
+  </script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
   </body>
 </html>
