@@ -104,15 +104,20 @@ def init_routes(app):
     def get_client_files(client_ip):
         """Get files for a specific client."""
         try:
-            # Construct the path using client IP
-            client_path = os.path.join(EXPORT_DIR, client_ip)
+            # Find the correct client directory by matching the IP prefix
+            client_dirs = [d for d in os.listdir(EXPORT_DIR) if d.startswith(client_ip)]
+            if not client_dirs:
+                return jsonify({'error': 'Client directory not found'}), 404
+
+            # Use the first matching directory (assuming only one per IP)
+            client_dir = os.path.join(EXPORT_DIR, client_dirs[0])
 
             # Get the relative path from query parameters, default to root
             rel_path = request.args.get('path', '')
-            current_path = os.path.join(client_path, rel_path)
+            current_path = os.path.join(client_dir, rel_path)
 
             # Ensure the path is still within the client's directory
-            if not os.path.realpath(current_path).startswith(os.path.realpath(client_path)):
+            if not os.path.realpath(current_path).startswith(os.path.realpath(client_dir)):
                 return jsonify({'error': 'Invalid path'}), 403
 
             if not os.path.exists(current_path):
@@ -163,11 +168,18 @@ def init_routes(app):
     def download_file(client_ip, file_path):
         """Download a file from a client's directory."""
         try:
+            # Find the correct client directory by matching the IP prefix
+            client_dirs = [d for d in os.listdir(EXPORT_DIR) if d.startswith(client_ip)]
+            if not client_dirs:
+                return jsonify({'error': 'Client directory not found'}), 404
+
+            # Use the first matching directory (assuming only one per IP)
+            client_dir = os.path.join(EXPORT_DIR, client_dirs[0])
+
             # Construct the full file path
-            full_path = os.path.join(EXPORT_DIR, client_ip, file_path)
+            full_path = os.path.join(client_dir, file_path)
 
             # Ensure the path is still within the client's directory
-            client_dir = os.path.join(EXPORT_DIR, client_ip)
             if not os.path.realpath(full_path).startswith(os.path.realpath(client_dir)):
                 return jsonify({'error': 'Invalid path'}), 403
 
@@ -182,9 +194,20 @@ def init_routes(app):
     @app.route('/client_log')
     def client_log():
         """Serve the contents of the log file for the specified client."""
-        client = request.args.get('client')
-        log_file_path = os.path.join(EXPORT_DIR, client, 'cbin.log')
-        if client and os.path.isfile(log_file_path):
+        client_ip = request.args.get('client')
+        if not client_ip:
+            return "Client IP parameter is required.", 400
+
+        # Find the correct client directory by matching the IP prefix
+        client_dirs = [d for d in os.listdir(EXPORT_DIR) if d.startswith(client_ip)]
+        if not client_dirs:
+            return "Log file not found.", 404
+
+        # Use the first matching directory (assuming only one per IP)
+        client_dir = os.path.join(EXPORT_DIR, client_dirs[0])
+        log_file_path = os.path.join(client_dir, 'cbin.log')
+
+        if os.path.isfile(log_file_path):
             try:
                 with open(log_file_path, 'r') as log_file:
                     log_entries = [json.loads(line) for line in log_file]
@@ -192,8 +215,8 @@ def init_routes(app):
                 table = "<table><tr><th>Time</th><th>Level</th><th>Message</th></tr>"
                 for entry in log_entries:
                     # Add a class attribute to the table row based on the log level
-                    row_class = 'bg-red-100' if entry['level'] == 'error' else ''
-                    table += f"<tr class='{row_class}'><td>{entry['time']}</td><td>{entry['level']}</td><td>{entry['msg']}</td></tr>"
+                    row_class = 'bg-red-100' if entry.get('level', '') == 'error' else ''
+                    table += f"<tr class='{row_class}'><td>{entry.get('time', '')}</td><td>{entry.get('level', '')}</td><td>{entry.get('msg', '')}</td></tr>"
                 table += "</table>"
                 return table
             except Exception as e:
